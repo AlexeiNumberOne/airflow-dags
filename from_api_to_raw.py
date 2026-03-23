@@ -102,7 +102,7 @@ def extract_and_load_from_api_to_minio(**context):
         
 with DAG(
     dag_id='from_api_to_raw',
-    schedule_interval="0 5 * * 1-5",     
+    schedule="0 5 * * 1-5",     
     default_args=default_args,
     tags=["docker"],
     concurrency=1,
