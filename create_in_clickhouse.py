@@ -15,7 +15,7 @@ def check_minio_connection():
     try:
         hook = S3Hook('minio_conn')
         # check_for_bucket - рабочий метод для проверки существования бакета
-        buckets = ['prod', 'tickers']
+        buckets = ['tickers']
         for bucket in buckets:
             exists = hook.check_for_bucket(bucket_name=bucket)
             logging.info(f"Bucket '{bucket}': {exists}")
@@ -34,26 +34,6 @@ def check_minio_connection():
         logging.error(f"Failed to connect to MinIO: {e}")
         raise
 
-def list_files_in_bucket(bucket_name, **context):
-    """Список файлов в бакете"""
-    hook = S3Hook('minio_conn')
-    logging.info(f"Listing files in bucket: {bucket_name}")
-    
-    try:
-        objects = hook.list_keys(bucket_name=bucket_name)
-        if objects:
-            logging.info(f"Found {len(objects)} files:")
-            for obj in objects:
-                logging.info(f"  - {obj}")
-        else:
-            logging.info(f"No files found in bucket '{bucket_name}'")
-        
-        context['ti'].xcom_push(key='file_list', value=objects)
-        return objects
-    except Exception as e:
-        logging.error(f"Error listing bucket {bucket_name}: {e}")
-        raise
-
 with DAG(
     'minio_check_dag',
     default_args=default_args,
@@ -67,8 +47,3 @@ with DAG(
         python_callable=check_minio_connection,
     )
     
-    list_prod_files = PythonOperator(
-        task_id='list_prod_files',
-        python_callable=list_files_in_bucket,
-        op_kwargs={'bucket_name': 'prod'},
-    )
