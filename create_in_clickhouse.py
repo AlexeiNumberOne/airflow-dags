@@ -14,8 +14,7 @@ default_args = {
 def check_minio_connection():
     try:
         hook = S3Hook('minio_conn')
-        # Пытаемся получить список бакетов
-        buckets = hook.list_buckets()
+        buckets = hook.get_bucket_list()
         logging.info(f"Connected to MinIO! Found {len(buckets)} buckets:")
         for bucket in buckets:
             logging.info(f"  - {bucket['Name']}")
