@@ -8,7 +8,7 @@ from airflow.models import Variable
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator
 from datetime import datetime, timedelta
-from minio import Minio
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from requests.exceptions import Timeout, RequestException
 from plugins import for_delay
 
@@ -32,17 +32,13 @@ def extract_and_load_from_api_to_minio(**context):
     start_date = get_date(**context)
     logging.info(f"Сбор данных с API за: {start_date}")
     
-    logging.info(f'Подключение к S3')
-    s3_client = Minio(
-        "minio:9000",
-        access_key="minioadmin",
-        secret_key="minioadmin",
-        secure=False  
-    )
+    s3_hook = S3Hook('minio_conn')
     bucket_name = 'tickers'
-    if not s3_client.bucket_exists(bucket_name):
-        s3_client.make_bucket(bucket_name)
-    logging.info(f'Подключение к S3 успешно пройдено, бакет найден')
+    if not s3_hook.check_for_bucket(bucket_name):
+        s3_hook.create_bucket(bucket_name)
+        logging.info(f"Бакет {bucket_name} создан")
+    else:
+        logging.info(f"Бакет {bucket_name} найден")
 
     API_KEY = Variable.get("API_KEY") # API KEY https://massive.com/
   
@@ -80,12 +76,11 @@ def extract_and_load_from_api_to_minio(**context):
 
                 result = response.text
 
-                s3_client.put_object(
+                s3_hook.load_string(
+                    string_data=result,
+                    key=f"foreign/{ticker}/{start_date}/response_{start_date}.json",
                     bucket_name=bucket_name,
-                    object_name=f"foreign/{ticker}/{start_date}/response_{start_date}.json",
-                    data=io.BytesIO(result.encode()),
-                    length=len(result),
-                    content_type='application/json'
+                    replace=True
                 )
                 
                 break
