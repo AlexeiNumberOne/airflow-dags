@@ -64,7 +64,7 @@ def count_files_in_bucket(bucket_name, **context):
 with DAG(
     'minio_check_dag',
     default_args=default_args,
-    schedule_interval=None,  
+    schedule=None,  
     catchup=False,
     tags=['minio', 'check']
 ) as dag:
