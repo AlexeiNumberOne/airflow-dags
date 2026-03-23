@@ -105,7 +105,6 @@ with DAG(
     schedule="0 5 * * 1-5",     
     default_args=default_args,
     tags=["docker"],
-    concurrency=1,
     max_active_tasks=1,
     max_active_runs=1,
 ) as dag:
